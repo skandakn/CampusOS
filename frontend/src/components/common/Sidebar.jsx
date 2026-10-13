@@ -1,193 +1,256 @@
-import { useState, useMemo } from 'react'
-import { FiSearch, FiFilter, FiX, FiCheck } from 'react-icons/fi' 
-import { TbBuilding } from 'react-icons/tb'
+import React, { useState, useMemo } from 'react'
+import { FiSearch, FiFilter, FiX, FiCheck } from 'react-icons/fi'
+import { TbBuildingCommunity } from 'react-icons/tb'
 
 const Sidebar = ({ stats, selectedBuilding, onBuildingSelect }) => {
-  // 1. State for Search and Filters
   const [searchQuery, setSearchQuery] = useState('')
-  const [showFilters, setShowFilters] = useState(false)
-  const [statusFilter, setStatusFilter] = useState('all') // 'all', 'good', 'warning', 'critical'
+  const [statusFilter, setStatusFilter] = useState('all')
 
-  // 2. Filtering Logic
   const filteredBuildings = useMemo(() => {
     return stats.filter((building) => {
-      // Check search match
       const searchString = `${building.name || ''} ${building.building_id || ''} ${building.type || ''}`.toLowerCase()
       const matchesSearch = searchString.includes(searchQuery.toLowerCase())
-
-      // Check status match
       const matchesStatus = statusFilter === 'all' || building.status === statusFilter
-
       return matchesSearch && matchesStatus
     })
   }, [stats, searchQuery, statusFilter])
 
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'good': return 'bg-emerald-500'
-      case 'warning': return 'bg-amber-500'
-      case 'critical': return 'bg-red-500'
-      default: return 'bg-gray-500'
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'good':
+        return <span className="stamp text-[#2E8C42] border-[#2E8C42] text-[9px] bg-white">OPTIMAL</span>
+      case 'warning':
+        return <span className="stamp text-[#E8A030] border-[#E8A030] text-[9px] bg-white">WARNING</span>
+      case 'critical':
+        return <span className="stamp text-[#C03A3A] border-[#C03A3A] text-[9px] bg-white">CRITICAL</span>
+      default:
+        return <span className="stamp text-[#121210]/60 border-[#121210]/60 text-[9px] bg-white">UNKNOWN</span>
     }
   }
 
-  const getStatusText = (status) => {
-    switch(status) {
-      case 'good': return 'Optimal'
-      case 'warning': return 'Warning'
-      case 'critical': return 'Critical'
-      default: return 'Unknown'
-    }
-  }
+  const optimalCount = stats.filter((b) => b.status === 'good').length
+  const warningCount = stats.filter((b) => b.status === 'warning').length
+  const criticalCount = stats.filter((b) => b.status === 'critical').length
 
   return (
-    <aside className="w-64 bg-gray-800 border-r border-gray-700 flex flex-col h-full z-20">
-      
-      {/* Search and Filter Section */}
-      <div className="p-4 border-b border-gray-700 shrink-0 bg-gray-800">
-        <div className="relative">
-          <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search buildings..."
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg pl-10 pr-8 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-gray-200 placeholder-gray-500 transition-all"
-          />
-          {searchQuery && (
-            <button 
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300"
-            >
-              <FiX />
-            </button>
-          )}
-        </div>
-        
-        <button 
-          onClick={() => setShowFilters(!showFilters)}
-          className={`mt-3 w-full flex items-center justify-center space-x-2 text-sm py-1.5 rounded-md transition-colors ${
-            showFilters || statusFilter !== 'all' 
-              ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' 
-              : 'text-gray-400 hover:text-white hover:bg-gray-700 border border-transparent'
-          }`}
-        >
-          <FiFilter />
-          <span>{statusFilter !== 'all' ? `Filtered: ${getStatusText(statusFilter)}` : 'Filter Buildings'}</span>
-        </button>
-
-        {/* Expandable Filter Menu */}
-        {showFilters && (
-          <div className="mt-3 pt-3 border-t border-gray-700/50 animate-in slide-in-from-top-2 fade-in duration-200">
-            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">By Status</p>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { id: 'all', label: 'All' },
-                { id: 'good', label: 'Optimal', color: 'emerald' },
-                { id: 'warning', label: 'Warning', color: 'amber' },
-                { id: 'critical', label: 'Critical', color: 'red' }
-              ].map((filter) => (
-                <button
-                  key={filter.id}
-                  onClick={() => setStatusFilter(filter.id)}
-                  className={`flex items-center justify-center px-2 py-1.5 rounded text-xs font-medium transition-all ${
-                    statusFilter === filter.id 
-                      ? filter.id === 'all' 
-                        ? 'bg-blue-500 text-white' 
-                        : `bg-${filter.color}-500/20 text-${filter.color}-400 border border-${filter.color}-500/50`
-                      : 'bg-gray-900 text-gray-400 hover:bg-gray-700 border border-gray-700'
-                  }`}
-                >
-                  {statusFilter === filter.id && filter.id !== 'all' && <FiCheck className="mr-1" />}
-                  {filter.label}
-                </button>
-              ))}
-            </div>
+    <aside className="w-[300px] shrink-0 bg-[#CFE8D6] border-r-[3px] border-[#121210] flex flex-col h-full z-20">
+      {/* Header section & Search */}
+      <div className="p-4 border-b-[3px] border-[#121210] bg-[#CFE8D6] space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="text-[10px] font-mono tracking-widest text-[#121210]/70 uppercase font-bold">
+            BUILDING QUEUE
           </div>
-        )}
-      </div>
-      
-      {/* Buildings List */}
-      <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-gray-400">
-            RESULTS ({filteredBuildings.length})
-          </h3>
-          
-          {selectedBuilding && (
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                onBuildingSelect(null);
-              }}
-              className="flex items-center space-x-1 text-[10px] uppercase font-bold text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 px-2 py-1 rounded-full border border-blue-500/20"
-            >
-              <FiX />
-              <span>Clear</span>
-            </button>
-          )}
+          <span className="tag bg-[#FFFFFF] text-[10px] py-0.5">
+            {filteredBuildings.length} OF {stats.length}
+          </span>
         </div>
 
-        <div className="space-y-2">
-          {filteredBuildings.length === 0 ? (
-            <div className="text-center py-6 text-gray-500 text-sm">
-              No buildings match your criteria.
-            </div>
-          ) : (
-            filteredBuildings.map((building) => (
-              <div
-                key={building.building_id}
-                onClick={() => onBuildingSelect(building)}
-                className={`p-3 rounded-lg cursor-pointer transition-all duration-200 group border ${
-                  selectedBuilding?.building_id === building.building_id 
-                    ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.15)]' 
-                    : 'bg-gray-800/50 hover:bg-gray-700 border-transparent hover:border-gray-600'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center overflow-hidden">
-                    <div className={`p-2 rounded-lg mr-3 shrink-0 ${selectedBuilding?.building_id === building.building_id ? 'bg-blue-500 text-white' : 'bg-gray-700 text-gray-400'}`}>
-                      <TbBuilding className="text-lg" />
-                    </div>
-                    <div className="truncate pr-2">
-                      <p className="font-medium text-gray-200 text-sm truncate">{building.name || building.building_id}</p>
-                      <p className="text-xs text-gray-400 truncate">
-                        Energy: <span className="text-gray-300">{building.avg_energy?.toFixed(0)} kWh</span>
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col items-end shrink-0">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                      building.status === 'good' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                      building.status === 'warning' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-                      'bg-red-500/20 text-red-400 border border-red-500/30'
-                    }`}>
-                      {getStatusText(building.status)}
-                    </span>
+        {/* Brutalist Search Bar */}
+        <div className="relative">
+          <div className="flex items-center border-2 border-[#121210] bg-[#FFFFFF] shadow-[3px_3px_0_#121210] px-2.5 py-1.5">
+            <FiSearch className="text-[#121210] mr-2 text-sm shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Filter node or building..."
+              className="w-full bg-transparent text-xs font-mono text-[#121210] placeholder-[#121210]/40 outline-none"
+            />
+            {searchQuery ? (
+              <button onClick={() => setSearchQuery('')} className="text-[#121210]/60 hover:text-[#121210]">
+                <FiX className="text-xs" />
+              </button>
+            ) : (
+              <span className="text-[9px] font-mono border border-[#121210] px-1 py-0.2 bg-[#CFE8D6]">
+                ⌘K
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Filter Filter Buttons */}
+        <div className="flex items-center gap-1.5 font-mono text-[10.5px]">
+          <button
+            onClick={() => setStatusFilter('all')}
+            className={`px-2 py-0.5 border-2 border-[#121210] font-bold btn-press ${
+              statusFilter === 'all'
+                ? 'bg-[#121210] text-[#FFFFFF] shadow-[2px_2px_0_#121210]'
+                : 'bg-[#FFFFFF] text-[#121210]'
+            }`}
+          >
+            ALL
+          </button>
+          <button
+            onClick={() => setStatusFilter('good')}
+            className={`px-2 py-0.5 border-2 border-[#121210] font-bold btn-press ${
+              statusFilter === 'good'
+                ? 'bg-[#2E8C42] text-white shadow-[2px_2px_0_#121210]'
+                : 'bg-[#FFFFFF] text-[#2E8C42]'
+            }`}
+          >
+            OPT ({optimalCount})
+          </button>
+          <button
+            onClick={() => setStatusFilter('warning')}
+            className={`px-2 py-0.5 border-2 border-[#121210] font-bold btn-press ${
+              statusFilter === 'warning'
+                ? 'bg-[#E8A030] text-[#121210] shadow-[2px_2px_0_#121210]'
+                : 'bg-[#FFFFFF] text-[#E8A030]'
+            }`}
+          >
+            WARN ({warningCount})
+          </button>
+          <button
+            onClick={() => setStatusFilter('critical')}
+            className={`px-2 py-0.5 border-2 border-[#121210] font-bold btn-press ${
+              statusFilter === 'critical'
+                ? 'bg-[#C03A3A] text-white shadow-[2px_2px_0_#121210]'
+                : 'bg-[#FFFFFF] text-[#C03A3A]'
+            }`}
+          >
+            CRIT ({criticalCount})
+          </button>
+        </div>
+      </div>
+
+      {/* Buildings Cards List */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-[#CFE8D6]">
+        {filteredBuildings.map((building) => {
+          const isSelected = selectedBuilding?.building_id === building.building_id
+          const code = (building.building_id || 'BLDG-0').replace('_', '-').toUpperCase()
+
+          return (
+            <article
+              key={building.building_id}
+              onClick={() => onBuildingSelect(building)}
+              className={`p-3.5 relative cursor-pointer border-[3px] border-[#121210] transition-all btn-press ${
+                isSelected
+                  ? 'bg-[#FFFFFF] shadow-[6px_6px_0_#121210] -translate-x-1 -translate-y-1'
+                  : 'bg-[#FFFFFF] shadow-[4px_4px_0_#121210] hover:shadow-[6px_6px_0_#121210] hover:-translate-x-0.5 hover:-translate-y-0.5'
+              }`}
+            >
+              {/* Corner Tag */}
+              <span className="absolute -top-2.5 -left-2 bg-[#FFFFFF] border-2 border-[#121210] px-1.5 py-0.2 text-[9px] font-mono font-bold shadow-[2px_2px_0_#121210]">
+                {code}
+              </span>
+
+              <div className="flex justify-between items-start mt-1">
+                <div>
+                  <h3 className="font-display font-bold text-sm text-[#121210] leading-tight">
+                    {building.name || `Building ${building.building_id.split('_')[1]}`}
+                  </h3>
+                  <div className="text-[11px] font-mono text-[#121210]/60 capitalize mt-0.5">
+                    {building.type || 'Academic Hub'}
                   </div>
                 </div>
+
+                <div className="text-right">
+                  <div className="font-mono font-bold text-lg text-[#121210] leading-tight">
+                    {building.sustainability_score || 0}
+                    <span className="text-[10px] text-[#121210]/60 font-normal">/100</span>
+                  </div>
+                  <div className="mt-1">{getStatusBadge(building.status)}</div>
+                </div>
               </div>
-            ))
-          )}
-        </div>
+
+              {/* Metric tags */}
+              <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
+                <span className="tag bg-[#CFE8D6] text-[9.5px] py-0.5 px-1.5">
+                  ⚡ {Math.round(building.avg_energy || 0)} kWh
+                </span>
+                <span className="tag bg-[#FFFFFF] text-[9.5px] py-0.5 px-1.5">
+                  💧 {Math.round(building.water_usage || 0)} L
+                </span>
+              </div>
+
+              {/* Status Stepper / Indicators (Approva Chain Node style) */}
+              <div className="flex items-center justify-between mt-3 pt-2 border-t border-[#121210]/20">
+                <div className="text-[9.5px] font-mono text-[#121210]/60">
+                  OCC: <span className="font-bold text-[#121210]">{building.occupancy || 0}</span>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <span
+                    className={`chain-node ${
+                      (building.avg_energy || 0) < 120
+                        ? 'bg-[#2E8C42] text-white'
+                        : 'bg-[#E8A030] text-[#121210]'
+                    }`}
+                    title="Energy Threshold"
+                  >
+                    E
+                  </span>
+                  <span className="chain-line"></span>
+                  <span
+                    className={`chain-node ${
+                      (building.water_usage || 0) < 300
+                        ? 'bg-[#2E8C42] text-white'
+                        : 'bg-[#E8A030] text-[#121210]'
+                    }`}
+                    title="Water Conservation"
+                  >
+                    W
+                  </span>
+                  <span className="chain-line"></span>
+                  <span
+                    className={`chain-node ${
+                      building.status === 'critical'
+                        ? 'bg-[#C03A3A] text-white'
+                        : 'bg-[#2E8C42] text-white'
+                    }`}
+                    title="Health Check"
+                  >
+                    {building.status === 'critical' ? '!' : '✓'}
+                  </span>
+                </div>
+              </div>
+            </article>
+          )
+        })}
       </div>
-      
-      {/* Dynamic Summary based on Filters */}
-      <div className="p-4 border-t border-gray-700 shrink-0 bg-gray-800">
-        <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Filtered Summary</h4>
-        <div className="space-y-1.5 bg-gray-900/50 p-3 rounded-lg border border-gray-700/50">
-          <div className="flex justify-between text-xs">
-            <span className="text-gray-400">Total Shown</span>
-            <span className="font-mono text-white">{filteredBuildings.length}</span>
+
+      {/* Sidebar Footer: Summary & Auditor info */}
+      <div className="p-3.5 border-t-[3px] border-[#121210] bg-[#CFE8D6] space-y-3">
+        <div className="border-2 border-[#121210] bg-[#FFFFFF] shadow-[3px_3px_0_#121210] p-2.5">
+          <div className="text-[9px] font-mono tracking-widest text-[#121210]/60 uppercase">
+            CAMPUS TELEMETRY · HEALTH
           </div>
-          <div className="flex justify-between text-xs">
-            <span className="text-gray-400">Avg. Score</span>
-            <span className={`font-mono font-bold ${filteredBuildings.length > 0 ? 'text-white' : 'text-gray-600'}`}>
-              {filteredBuildings.length > 0 
-                ? Math.round(filteredBuildings.reduce((sum, b) => sum + (b.sustainability_score || 0), 0) / filteredBuildings.length)
-                : 0}/100
+          <div className="flex items-baseline justify-between mt-1">
+            <span className="font-mono font-bold text-2xl text-[#121210]">
+              {optimalCount}/{stats.length}
             </span>
+            <span className="text-[10px] font-mono text-[#2E8C42] font-bold">
+              {Math.round((optimalCount / (stats.length || 1)) * 100)}% OPTIMAL
+            </span>
+          </div>
+
+          <div className="mt-2 h-2.5 border-2 border-[#121210] flex overflow-hidden">
+            <div
+              style={{ width: `${(optimalCount / (stats.length || 1)) * 100}%` }}
+              className="bg-[#2E8C42]"
+            ></div>
+            <div
+              style={{ width: `${(warningCount / (stats.length || 1)) * 100}%` }}
+              className="bg-[#E8A030]"
+            ></div>
+            <div
+              style={{ width: `${(criticalCount / (stats.length || 1)) * 100}%` }}
+              className="bg-[#C03A3A]"
+            ></div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 px-1">
+          <div className="w-8 h-8 border-2 border-[#121210] bg-[#121210] text-[#FFFFFF] flex items-center justify-center font-display font-bold text-xs shadow-[2px_2px_0_#121210]">
+            OP
+          </div>
+          <div>
+            <div className="text-xs font-display font-bold leading-tight text-[#121210]">
+              Chief Operations Officer
+            </div>
+            <div className="text-[9.5px] font-mono text-[#121210]/60">
+              AUDIT VERIFIED · SHA-256
+            </div>
           </div>
         </div>
       </div>

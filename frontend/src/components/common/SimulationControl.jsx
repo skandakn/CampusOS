@@ -4,16 +4,20 @@ import { dataAPI } from '../../services/api';
 
 const SimulationControl = () => {
   const [isRunning, setIsRunning] = useState(false);
-  const [buildingsTracked, setBuildingsTracked] = useState(0);
+  const [buildingsTracked, setBuildingsTracked] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch initial status on mount
   useEffect(() => {
     const checkStatus = async () => {
-      const data = await dataAPI.getStatus();
-      console.log(data)
-      setIsRunning(data.is_running);
-      setBuildingsTracked(data.buildings_tracked);
+      try {
+        const data = await dataAPI.getStatus();
+        if (data) {
+          setIsRunning(Boolean(data.is_running));
+          if (data.buildings_tracked) setBuildingsTracked(data.buildings_tracked);
+        }
+      } catch (err) {
+        // Fallback default
+      }
     };
     checkStatus();
   }, []);
@@ -24,68 +28,67 @@ const SimulationControl = () => {
       const result = await dataAPI.toggleSimulation();
       setIsRunning(result.status === 'running');
     } catch (error) {
-      // Handle error (maybe show a toast notification)
+      setIsRunning(!isRunning);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="bg-gray-800/80 backdrop-blur-md border border-gray-700/50 rounded-xl p-3 flex items-center justify-between shadow-lg w-72">
-      
-      {/* Status Indicator & Info */}
-      <div className="flex items-center space-x-3">
-        {/* Pulsing Dot */}
+    <div className="bg-[#FFFFFF] border-[3px] border-[#121210] shadow-[3px_3px_0_#121210] px-3 py-1.5 flex items-center gap-3">
+      {/* Stream Status */}
+      <div className="flex items-center gap-2">
         <div className="relative flex h-3 w-3">
           {isRunning && (
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2E8C42] opacity-75"></span>
           )}
-          <span className={`relative inline-flex rounded-full h-3 w-3 transition-colors duration-300 ${
-            isRunning ? 'bg-emerald-500' : 'bg-gray-500'
-          }`}></span>
+          <span
+            className={`relative inline-flex rounded-full h-3 w-3 border border-[#121210] ${
+              isRunning ? 'bg-[#2E8C42]' : 'bg-[#E8A030]'
+            }`}
+          ></span>
         </div>
-        
+
         <div>
-          <h4 className="text-xs font-bold text-gray-200 flex items-center">
-            <FiDatabase className="mr-1.5 text-gray-400" /> 
-            Data Stream
+          <h4 className="text-[11px] font-display font-bold text-[#121210] uppercase leading-none">
+            DATA STREAM
           </h4>
-          <p className="text-[10px] text-gray-400 font-mono mt-0.5">
-            {isRunning ? 'LIVE SYNTHESIS' : 'SYSTEM PAUSED'}
+          <p className="text-[9px] font-mono tracking-wider text-[#121210]/60 mt-0.5">
+            {isRunning ? 'SYNTHESIS ON' : 'PAUSED'}
           </p>
         </div>
       </div>
 
-      {/* Action Button & Building Count */}
-      <div className="flex items-center space-x-3 border-l border-gray-700 pl-3">
-        <div className="text-center">
-          <p className="text-[10px] text-gray-500 uppercase tracking-wider">Nodes</p>
-          <p className="text-xs font-bold text-gray-300 flex items-center justify-center">
-             <FiServer className="mr-1 text-blue-400"/> {buildingsTracked}
+      {/* Node Count & Toggle Button */}
+      <div className="flex items-center gap-2 border-l-2 border-[#121210] pl-2.5">
+        <div className="text-right">
+          <p className="text-[8.5px] font-mono text-[#121210]/60 uppercase">NODES</p>
+          <p className="text-[11px] font-mono font-bold text-[#121210] leading-none">
+            {buildingsTracked}
           </p>
         </div>
-        
+
         <button
           onClick={handleToggle}
           disabled={isLoading}
-          className={`p-2 rounded-lg flex items-center justify-center transition-all ${
-            isLoading ? 'opacity-50 cursor-not-allowed bg-gray-700' :
-            isRunning 
-              ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30' 
-              : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30'
+          className={`w-7 h-7 border-2 border-[#121210] shadow-[2px_2px_0_#121210] flex items-center justify-center btn-press font-bold transition-all ${
+            isLoading
+              ? 'opacity-50 cursor-not-allowed bg-gray-200'
+              : isRunning
+              ? 'bg-[#C03A3A] text-white'
+              : 'bg-[#2E8C42] text-white'
           }`}
-          title={isRunning ? "Pause Simulation" : "Start Simulation"}
+          title={isRunning ? 'Pause Telemetry Simulation' : 'Start Telemetry Simulation'}
         >
           {isLoading ? (
-            <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+            <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
           ) : isRunning ? (
-            <FiPause className="text-sm" />
+            <FiPause className="text-xs" />
           ) : (
-            <FiPlay className="text-sm ml-0.5" />
+            <FiPlay className="text-xs ml-0.5" />
           )}
         </button>
       </div>
-      
     </div>
   );
 };

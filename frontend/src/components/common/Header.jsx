@@ -1,55 +1,94 @@
-import { FiMenu, FiGrid, FiMap, FiSettings, FiBell } from 'react-icons/fi'
-import { TbBuildingEstate } from 'react-icons/tb'
+import React from 'react'
+import { FiGrid, FiMap, FiSettings, FiBell, FiShield, FiCpu } from 'react-icons/fi'
+import { TbBuildingCommunity } from 'react-icons/tb'
 import SimulationControl from './SimulationControl'
 
 const Header = ({ connected, onSimulate, activeView, onViewChange }) => {
   return (
-    <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
-      <div className="flex items-center justify-between">
-        {/* Left side: Logo and Title */}
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-3">
-            <TbBuildingEstate className="text-3xl text-blue-500" />
+    <header className="bg-[#CFE8D6] border-b-[3px] border-[#121210] px-6 py-3.5 shrink-0 z-30">
+      <div className="flex items-center justify-between gap-4">
+        {/* Left: Brand & Badges */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 bg-[#2E8C42] border-2 border-[#121210] shadow-[3px_3px_0_#121210] flex items-center justify-center text-white">
+              <TbBuildingCommunity className="text-2xl" />
+            </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Smart Campus Digital Twin</h1>
-              <p className="text-sm text-gray-400">Real-time Sustainability Monitoring</p>
+              <div className="flex items-center gap-2">
+                <span className="font-display font-black text-xl tracking-tight text-[#121210]">
+                  CampusOS
+                </span>
+                <span className="tag bg-[#FFFFFF] text-[9.5px] py-0.5 px-1.5 font-mono">
+                  v2.4 · OPS
+                </span>
+              </div>
+              <div className="text-[10.5px] font-mono tracking-widest text-[#121210]/60 uppercase">
+                Sustainable Campus Digital Twin
+              </div>
             </div>
           </div>
+
+          <div className="hidden xl:flex items-center gap-2 ml-2">
+            <span className="tag bg-[#FFFFFF]">
+              <span className="w-2 h-2 rounded-full bg-[#2E8C42]"></span>
+              10 NODES
+            </span>
+            <span className="tag bg-[#E8A030] text-[#121210]">
+              <FiCpu className="text-xs" />
+              AI FORECASTING
+            </span>
+          </div>
         </div>
-        
-        {/* Center: View Toggle */}
-        <div className="flex items-center space-x-2 bg-gray-900 rounded-lg p-1">
+
+        {/* Center: View Switcher Tabs (Approva style) */}
+        <div className="flex items-center gap-2">
           <button
             onClick={() => onViewChange('dashboard')}
-            className={`px-3 py-2 rounded-md flex items-center space-x-1 transition ${activeView === 'dashboard' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'}`}
+            className={`font-display font-bold text-xs uppercase tracking-wider px-4 py-2 border-[3px] border-[#121210] flex items-center gap-1.5 btn-press ${
+              activeView === 'dashboard'
+                ? 'bg-[#121210] text-[#FFFFFF] shadow-[3px_3px_0_#121210]'
+                : 'bg-[#FFFFFF] text-[#121210] shadow-[3px_3px_0_#121210] hover:bg-[#CFE8D6]'
+            }`}
           >
-            <FiGrid />
+            <FiGrid className="text-sm" />
             <span>Dashboard</span>
           </button>
+
           <button
             onClick={() => onViewChange('3d')}
-            className={`px-3 py-2 rounded-md flex items-center space-x-1 transition ${activeView === '3d' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'}`}
+            className={`font-display font-bold text-xs uppercase tracking-wider px-4 py-2 border-[3px] border-[#121210] flex items-center gap-1.5 btn-press ${
+              activeView === '3d'
+                ? 'bg-[#121210] text-[#FFFFFF] shadow-[3px_3px_0_#121210]'
+                : 'bg-[#FFFFFF] text-[#121210] shadow-[3px_3px_0_#121210] hover:bg-[#CFE8D6]'
+            }`}
           >
-            <FiMap />
+            <FiMap className="text-sm" />
             <span>3D Campus</span>
           </button>
+
           <button
             onClick={() => onViewChange('operations')}
-            className={`px-3 py-2 rounded-md flex items-center space-x-1 transition ${activeView === 'operations' ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'}`}
+            className={`font-display font-bold text-xs uppercase tracking-wider px-4 py-2 border-[3px] border-[#121210] flex items-center gap-1.5 btn-press ${
+              activeView === 'operations'
+                ? 'bg-[#121210] text-[#FFFFFF] shadow-[3px_3px_0_#121210]'
+                : 'bg-[#FFFFFF] text-[#121210] shadow-[3px_3px_0_#121210] hover:bg-[#CFE8D6]'
+            }`}
           >
-            <FiSettings />
+            <FiSettings className="text-sm" />
             <span>Operations</span>
           </button>
         </div>
-        
-        {/* Right side: Actions */}
-        <div className="flex items-center space-x-4">
-          <SimulationControl/>
-          <button className="p-2 hover:bg-gray-700 rounded-lg transition relative">
-            <FiBell className="text-xl" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+
+        {/* Right: Simulation Controller & Alerts */}
+        <div className="flex items-center gap-3">
+          <SimulationControl />
+          <button 
+            className="w-10 h-10 border-[3px] border-[#121210] bg-[#FFFFFF] shadow-[3px_3px_0_#121210] flex items-center justify-center text-[#121210] relative btn-press"
+            title="System Alerts"
+          >
+            <FiBell className="text-lg" />
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-[#C03A3A] border-2 border-[#121210] rounded-full"></span>
           </button>
-          
         </div>
       </div>
     </header>

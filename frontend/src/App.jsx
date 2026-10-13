@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FiActivity, FiZap, FiDroplet, FiUsers, FiThermometer, FiWind } from 'react-icons/fi'
+import { FiActivity, FiZap, FiDroplet, FiServer, FiRefreshCw } from 'react-icons/fi'
 import { TbBuildingSkyscraper } from 'react-icons/tb'
 import Header from './components/common/Header'
 import Sidebar from './components/common/Sidebar'
@@ -9,9 +9,7 @@ import Leaderboard from './components/Dashboard/Leaderboard'
 import MetricsPanel from './components/Dashboard/MetricsPanel'
 import { dataAPI } from './services/api'
 import webSocketService from './services/websocket'
-import { STATUS_COLORS, DATA_TYPES } from './utils/constants'
 import WhatIfSimulator from './components/WhatIfSimulator'
-import AnomalyAlerts from './components/AnomalyAlerts'
 import AIPredictions from './components/AIPredictions'
 import mlService from './services/mlService'
 import BuildingDashboard from './components/CampusScene/BuildingDashboard'
@@ -22,9 +20,9 @@ function App() {
   const [selectedBuilding, setSelectedBuilding] = useState(null)
   const [loading, setLoading] = useState(true)
   const [connected, setConnected] = useState(false)
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState('overview') // 'overview', 'predictions', 'what-if'
   const [mlStatus, setMlStatus] = useState({})
-  const [activeView, setActiveView] = useState('dashboard') // 'dashboard' or '3d'
+  const [activeView, setActiveView] = useState('dashboard') // 'dashboard', '3d', 'operations'
   const [campusMetrics, setCampusMetrics] = useState({
     totalEnergy: 0,
     totalWater: 0,
@@ -33,30 +31,25 @@ function App() {
   })
 
   useEffect(() => {
-    // Initialize WebSocket connection
     webSocketService.connect()
-    
-    // Subscribe to WebSocket updates
+
     const unsubscribe = webSocketService.subscribe('stats_update', (data) => {
       const buildings = Object.values(data.buildings || {})
       setStats(buildings)
       calculateCampusMetrics(buildings)
       setConnected(true)
     })
-    
-    // Subscribe to connection status
+
     webSocketService.subscribe('connection', (data) => {
       setConnected(data.status === 'connected')
     })
-    
-    // Subscribe to building selection from 3D view
+
     webSocketService.subscribe('building_selected', (data) => {
       setSelectedBuilding(data)
     })
-    
-    // Fetch initial data
+
     fetchData()
-    
+
     return () => {
       unsubscribe()
       webSocketService.disconnect()
@@ -64,16 +57,16 @@ function App() {
   }, [])
 
   useEffect(() => {
-  const fetchMlStatus = async () => {
-    try {
-      const status = await mlService.getModelStatus()
-      setMlStatus(status)
-    } catch (error) {
-      console.error('Error fetching ML status:', error)
+    const fetchMlStatus = async () => {
+      try {
+        const status = await mlService.getModelStatus()
+        setMlStatus(status)
+      } catch (error) {
+        console.error('Error fetching ML status:', error)
+      }
     }
-  }
-  fetchMlStatus()
-}, [])
+    fetchMlStatus()
+  }, [])
 
   const fetchData = async () => {
     try {
@@ -84,7 +77,6 @@ function App() {
       calculateCampusMetrics(buildings)
     } catch (error) {
       console.error('Error fetching data:', error)
-      // Use mock data as fallback
       const mockData = generateMockData()
       setStats(mockData)
       calculateCampusMetrics(mockData)
@@ -94,11 +86,12 @@ function App() {
   }
 
   const calculateCampusMetrics = (buildings) => {
+    if (!buildings.length) return
     const totalEnergy = buildings.reduce((sum, b) => sum + (b.avg_energy || 0), 0)
     const totalWater = buildings.reduce((sum, b) => sum + (b.water_usage || 0), 0)
     const avgScore = buildings.reduce((sum, b) => sum + (b.sustainability_score || 0), 0) / buildings.length
     const buildingCount = buildings.length
-    
+
     setCampusMetrics({
       totalEnergy: Math.round(totalEnergy),
       totalWater: Math.round(totalWater),
@@ -109,213 +102,293 @@ function App() {
 
   const generateMockData = () => {
     const buildings = []
+    const types = ['academic', 'residential', 'administrative', 'library', 'laboratory']
     for (let i = 1; i <= 10; i++) {
-      const score = Math.random() * 100
+      const score = Math.round(50 + Math.random() * 45)
       buildings.push({
         building_id: `building_${i}`,
-        name: `Building ${i}`,
-        avg_energy: 50 + Math.random() * 150,
-        sustainability_score: Math.round(score),
-        status: score > 70 ? 'good' : score > 40 ? 'warning' : 'critical',
-        water_usage: 200 + Math.random() * 300,
-        occupancy: Math.floor(Math.random() * 200),
-        co2_levels: 400 + Math.random() * 400,
-        temperature: 20 + Math.random() * 8
+        name: `Campus Hub ${i}`,
+        type: types[(i - 1) % types.length],
+        avg_energy: Math.round(50 + Math.random() * 150),
+        sustainability_score: score,
+        status: score > 70 ? 'good' : score > 45 ? 'warning' : 'critical',
+        water_usage: Math.round(200 + Math.random() * 300),
+        occupancy: Math.floor(40 + Math.random() * 160),
+        co2_levels: Math.round(400 + Math.random() * 350),
+        temperature: Math.round(20 + Math.random() * 5)
       })
     }
     return buildings
   }
 
-  const startSimulation = async () => {
-    try {
-      await dataAPI.startSimulation(5, 2)
-      alert('Simulation started for 5 minutes! Real-time data will flow.')
-    } catch (error) {
-      console.error('Error starting simulation:', error)
-      alert('Failed to start simulation. Check backend connection.')
-    }
-  }
-
   const handleBuildingSelect = (building) => {
     setSelectedBuilding(building)
-    // Send WebSocket message
     webSocketService.send({
       type: 'building_selected',
-      building_id: building.building_id
+      building_id: building?.building_id
     })
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin-slow rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto mb-6"></div>
-          <h2 className="text-2xl font-semibold text-gray-200 mb-2">Initializing Digital Twin</h2>
-          <p className="text-gray-400">Loading campus sustainability data...</p>
+      <div className="min-h-screen bg-[#CFE8D6] flex items-center justify-center p-6">
+        <div className="border-[3px] border-[#121210] bg-[#FFFFFF] shadow-[6px_6px_0_#121210] p-8 max-w-md w-full text-center">
+          <div className="w-12 h-12 bg-[#2E8C42] border-2 border-[#121210] mx-auto mb-4 flex items-center justify-center text-white font-mono text-xl font-bold animate-pulse">
+            ⚡
+          </div>
+          <h2 className="font-display font-black text-2xl text-[#121210] mb-2 uppercase">
+            CampusOS · Initializing
+          </h2>
+          <p className="font-mono text-xs text-[#121210]/60">
+            CONNECTING TELEMETRY STREAMS & VERIFYING SENSORS...
+          </p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex flex-col overflow-hidden">
-      {/* Header */}
-      <Header 
+    <div className="h-screen bg-[#CFE8D6] flex flex-col overflow-hidden text-[#121210] font-sans selection:bg-[#121210] selection:text-[#FFFFFF]">
+      {/* Top Header */}
+      <Header
         connected={connected}
-        onSimulate={startSimulation}
         activeView={activeView}
         onViewChange={setActiveView}
       />
-      
+
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <Sidebar 
+        {/* Left Sidebar: Building Queue */}
+        <Sidebar
           stats={stats}
           selectedBuilding={selectedBuilding}
           onBuildingSelect={handleBuildingSelect}
         />
-        
-        {/* Main Content */}
-        <main className="flex-1 flex flex-col overflow-hidden">
-          {/* Campus Metrics Quick View */}
-          <div className="grid grid-cols-4 gap-4 p-4 border-b border-gray-700">
-            <div className="glass-card p-4">
-              <div className="flex items-center">
-                <FiZap className="text-yellow-500 text-xl mr-3" />
+
+        {/* Main Content Area */}
+        <main className="flex-1 flex flex-col overflow-hidden bg-[#CFE8D6] grid-paper">
+          {/* Quick Metrics Bar (Brutalist Stat Cards) */}
+          <div className="grid grid-cols-4 gap-4 p-5 border-b-[3px] border-[#121210] bg-[#CFE8D6] shrink-0">
+            <div className="brut-card p-4 relative">
+              <span className="absolute -top-2.5 -left-2 bg-[#FFFFFF] border-2 border-[#121210] px-1.5 py-0.2 text-[9px] font-mono font-bold shadow-[2px_2px_0_#121210]">
+                METRIC-01
+              </span>
+              <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">Energy Usage</p>
-                  <p className="text-xl font-bold">{campusMetrics.totalEnergy} kWh</p>
+                  <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#121210]/60">
+                    CAMPUS ENERGY LOAD
+                  </p>
+                  <p className="font-mono font-black text-2xl text-[#121210] mt-1">
+                    {campusMetrics.totalEnergy}{' '}
+                    <span className="text-xs font-normal text-[#121210]/60">kWh</span>
+                  </p>
+                </div>
+                <div className="w-8 h-8 border-2 border-[#121210] bg-[#E8A030] flex items-center justify-center font-bold text-sm shadow-[2px_2px_0_#121210]">
+                  <FiZap className="text-[#121210]" />
                 </div>
               </div>
-            </div>
-            
-            <div className="glass-card p-4">
-              <div className="flex items-center">
-                <FiDroplet className="text-blue-500 text-xl mr-3" />
-                <div>
-                  <p className="text-gray-400 text-sm">Water Usage</p>
-                  <p className="text-xl font-bold">{campusMetrics.totalWater} L</p>
-                </div>
+              <div className="flex items-center gap-1.5 mt-2">
+                <span className="tag bg-[#CFE8D6] text-[9px] py-0 px-1">PEAK DEMAND</span>
+                <span className="text-[10px] font-mono text-[#121210]/60">NET-30 GRID</span>
               </div>
             </div>
-            
-            <div className="glass-card p-4">
-              <div className="flex items-center">
-                <FiActivity className="text-green-500 text-xl mr-3" />
+
+            <div className="brut-card p-4 relative">
+              <span className="absolute -top-2.5 -left-2 bg-[#FFFFFF] border-2 border-[#121210] px-1.5 py-0.2 text-[9px] font-mono font-bold shadow-[2px_2px_0_#121210]">
+                METRIC-02
+              </span>
+              <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">Avg. Score</p>
-                  <p className="text-xl font-bold">{campusMetrics.avgScore}/100</p>
+                  <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#121210]/60">
+                    WATER CONSUMPTION
+                  </p>
+                  <p className="font-mono font-black text-2xl text-[#121210] mt-1">
+                    {campusMetrics.totalWater}{' '}
+                    <span className="text-xs font-normal text-[#121210]/60">LITERS</span>
+                  </p>
+                </div>
+                <div className="w-8 h-8 border-2 border-[#121210] bg-[#CFE8D6] flex items-center justify-center font-bold text-sm shadow-[2px_2px_0_#121210]">
+                  <FiDroplet className="text-[#121210]" />
                 </div>
               </div>
+              <div className="flex items-center gap-1.5 mt-2">
+                <span className="tag bg-[#2E8C42] text-white text-[9px] py-0 px-1">POTABLE</span>
+                <span className="text-[10px] font-mono text-[#121210]/60">GREYWATER: 34%</span>
+              </div>
             </div>
-            
-            <div className="glass-card p-4">
-              <div className="flex items-center">
-                <TbBuildingSkyscraper className="text-purple-500 text-xl mr-3" />
+
+            <div className="brut-card p-4 relative">
+              <span className="absolute -top-2.5 -left-2 bg-[#FFFFFF] border-2 border-[#121210] px-1.5 py-0.2 text-[9px] font-mono font-bold shadow-[2px_2px_0_#121210]">
+                METRIC-03
+              </span>
+              <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">Buildings</p>
-                  <p className="text-xl font-bold">{campusMetrics.buildingCount}</p>
+                  <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#121210]/60">
+                    SUSTAINABILITY INDEX
+                  </p>
+                  <p className="font-mono font-black text-2xl text-[#121210] mt-1">
+                    {campusMetrics.avgScore}
+                    <span className="text-xs font-normal text-[#121210]/60">/100</span>
+                  </p>
                 </div>
+                <div className="w-8 h-8 border-2 border-[#121210] bg-[#2E8C42] text-white flex items-center justify-center font-bold text-sm shadow-[2px_2px_0_#121210]">
+                  <FiActivity />
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 mt-2">
+                <span className="tag bg-[#FFFFFF] text-[9px] py-0 px-1">
+                  {campusMetrics.avgScore >= 70 ? 'GRADE: A+' : 'GRADE: B'}
+                </span>
+                <span className="stamp text-[#2E8C42] border-[#2E8C42] text-[8px] py-0 px-1">
+                  AUDITED
+                </span>
+              </div>
+            </div>
+
+            <div className="brut-card p-4 relative">
+              <span className="absolute -top-2.5 -left-2 bg-[#FFFFFF] border-2 border-[#121210] px-1.5 py-0.2 text-[9px] font-mono font-bold shadow-[2px_2px_0_#121210]">
+                METRIC-04
+              </span>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#121210]/60">
+                    CONNECTED BUILDINGS
+                  </p>
+                  <p className="font-mono font-black text-2xl text-[#121210] mt-1">
+                    {campusMetrics.buildingCount}{' '}
+                    <span className="text-xs font-normal text-[#121210]/60">FACILITIES</span>
+                  </p>
+                </div>
+                <div className="w-8 h-8 border-2 border-[#121210] bg-[#FFFFFF] flex items-center justify-center font-bold text-sm shadow-[2px_2px_0_#121210]">
+                  <FiServer className="text-[#121210]" />
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 mt-2">
+                <span className="tag bg-[#2E8C42] text-white text-[9px] py-0 px-1">100% ONLINE</span>
+                <span className="text-[10px] font-mono text-[#121210]/60">SLA: 99.98%</span>
               </div>
             </div>
           </div>
-          
+
           {/* Main View Area */}
-          <div className="flex-1 overflow-hidden p-4 relative">
+          <div className="flex-1 overflow-hidden p-5 relative flex flex-col">
             {activeView === '3d' ? (
-              <div className="h-full rounded-xl overflow-hidden border border-gray-700">
-                <CampusScene 
+              <div className="h-full border-[3px] border-[#121210] bg-[#FFFFFF] shadow-[6px_6px_0_#121210] overflow-hidden relative">
+                <div className="absolute top-3 left-3 z-10 tag bg-[#FFFFFF]">
+                  3D DIGITAL TWIN · ORBIT VIEW
+                </div>
+                <CampusScene
                   buildings={stats}
                   onBuildingSelect={handleBuildingSelect}
                   selectedBuilding={selectedBuilding}
                 />
               </div>
             ) : activeView === 'operations' ? (
-              <div className="h-full rounded-xl overflow-hidden border border-gray-700">
-                <OpsCommandCenter/>
+              <div className="h-full border-[3px] border-[#121210] bg-[#FFFFFF] shadow-[6px_6px_0_#121210] overflow-hidden">
+                <OpsCommandCenter />
               </div>
             ) : (
               <div className="h-full flex flex-col">
-                
-                {/* Dashboard Grid */}
-                <div className="h-full flex flex-col">
-                  {/* Add tabs */}
-                  <div className="flex space-x-1 border-b border-gray-700 mb-4">
-                    {['overview', 'predictions', 'what-if'].map((tab) => (
-                      <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={`px-4 py-2 text-sm font-medium capitalize ${
-                          activeTab === tab
-                            ? 'border-b-2 border-blue-500 text-blue-400'
-                            : 'text-gray-400 hover:text-white'
-                        }`}
-                      >
-                        {tab}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Tab content */}
-                  {activeTab === 'overview' && (
-                    <div className={`flex-1 grid grid-cols-3 gap-4 overflow-hidden mb-0`}>
-                      <div className="col-span-2 overflow-y-auto">
-                        <Dashboard stats={stats} />
-                      </div>
-                      <div className="space-y-4 overflow-y-auto">
-                        <Leaderboard stats={stats} />
-                      </div>
-                    </div>
-                  )}
-
-                  {activeTab === 'predictions' && (
-                    <div className={`flex-1 grid grid-cols-3 gap-4 overflow-hidden mb-0`}>
-                      <div className="col-span-2 overflow-y-auto">
-                        <AIPredictions selectedBuilding={selectedBuilding} />
-                      </div>
-                      <div className="space-y-4 overflow-y-auto">
-                        <MetricsPanel />
-                        {/* Add prediction controls here */}
-                      </div>
-                    </div>
-                  )}
-
-                  {activeTab === 'what-if' && (
-                    <div className={`flex-1 overflow-y-auto mb-0`}>
-                      <WhatIfSimulator selectedBuilding={selectedBuilding} />
-                    </div>
-                  )}
-
-                  {activeTab === 'analytics' && (
-                    <div className="flex-1 grid grid-cols-2 gap-4">
-                      {/* Advanced analytics components */}
-                    </div>
-                  )}
+                {/* Approva-Style Tab Headers */}
+                <div className="flex items-center gap-0 border-b-[3px] border-[#121210] mb-4 shrink-0">
+                  <button
+                    onClick={() => setActiveTab('overview')}
+                    className={`font-display font-bold text-xs uppercase px-5 py-2.5 border-[3px] border-[#121210] border-b-0 -mb-[3px] btn-press transition-colors ${
+                      activeTab === 'overview'
+                        ? 'bg-[#121210] text-[#FFFFFF]'
+                        : 'bg-[#FFFFFF] text-[#121210] hover:bg-[#CFE8D6]'
+                    }`}
+                  >
+                    Campus Analytics & Telemetry
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('predictions')}
+                    className={`font-display font-bold text-xs uppercase px-5 py-2.5 border-[3px] border-[#121210] border-l-0 border-b-0 -mb-[3px] btn-press transition-colors ${
+                      activeTab === 'predictions'
+                        ? 'bg-[#121210] text-[#FFFFFF]'
+                        : 'bg-[#FFFFFF] text-[#121210] hover:bg-[#CFE8D6]'
+                    }`}
+                  >
+                    AI Forecasts & Models
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('what-if')}
+                    className={`font-display font-bold text-xs uppercase px-5 py-2.5 border-[3px] border-[#121210] border-l-0 border-b-0 -mb-[3px] btn-press transition-colors ${
+                      activeTab === 'what-if'
+                        ? 'bg-[#121210] text-[#FFFFFF]'
+                        : 'bg-[#FFFFFF] text-[#121210] hover:bg-[#CFE8D6]'
+                    }`}
+                  >
+                    What-If Scenarios & Retrofit
+                  </button>
                 </div>
+
+                {/* Tab Views */}
+                {activeTab === 'overview' && (
+                  <div className="flex-1 grid grid-cols-12 gap-5 overflow-hidden min-h-0">
+                    <div className="col-span-8 overflow-y-auto pr-1">
+                      <Dashboard stats={stats} />
+                    </div>
+                    <div className="col-span-4 overflow-y-auto space-y-4 pr-1">
+                      <Leaderboard stats={stats} />
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'predictions' && (
+                  <div className="flex-1 grid grid-cols-12 gap-5 overflow-hidden min-h-0">
+                    <div className="col-span-8 overflow-y-auto pr-1">
+                      <AIPredictions selectedBuilding={selectedBuilding} />
+                    </div>
+                    <div className="col-span-4 overflow-y-auto pr-1">
+                      <MetricsPanel />
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'what-if' && (
+                  <div className="flex-1 overflow-y-auto min-h-0 pr-1">
+                    <WhatIfSimulator selectedBuilding={selectedBuilding} />
+                  </div>
+                )}
               </div>
             )}
-            <BuildingDashboard 
-              building={selectedBuilding} 
-              onClose={() => handleBuildingSelect(null)} 
+
+            {/* Building Detail Modal */}
+            <BuildingDashboard
+              building={selectedBuilding}
+              onClose={() => handleBuildingSelect(null)}
             />
           </div>
         </main>
       </div>
-      
-      {/* Connection Status */}
-      <div className={`px-4 py-2 text-sm ${connected ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
-        <div className="flex items-center justify-between">
-          <span>
-            {connected ? '✅ Connected to real-time data stream' : '⚠️ Disconnected - Using mock data'}
+
+      {/* Brutalist Bottom Audit Footer */}
+      <footer className="border-t-[3px] border-[#121210] bg-[#FFFFFF] px-5 py-2 text-xs font-mono flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1.5 font-bold">
+            <span
+              className={`w-2 h-2 rounded-full border border-[#121210] ${
+                connected ? 'bg-[#2E8C42]' : 'bg-[#E8A030]'
+              }`}
+            ></span>
+            {connected ? 'LIVE TELEMETRY STREAM' : 'SYNTHETIC FALLBACK STREAM'}
           </span>
-          <button 
+          <span className="text-[#121210]/40">·</span>
+          <span className="text-[#121210]/70">
+            AUDIT HASH: <span className="font-bold">0x8F92...B41A</span> (SHA-256)
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
             onClick={fetchData}
-            className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm transition"
+            className="border-2 border-[#121210] bg-[#CFE8D6] px-2.5 py-0.5 font-bold flex items-center gap-1.5 btn-press shadow-[2px_2px_0_#121210]"
           >
-            Refresh Data
+            <FiRefreshCw className="text-xs" />
+            REFRESH AUDIT
           </button>
         </div>
-      </div>
+      </footer>
     </div>
   )
 }

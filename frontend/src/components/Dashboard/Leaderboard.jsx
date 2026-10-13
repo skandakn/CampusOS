@@ -1,115 +1,109 @@
-import { FiAward, FiTrendingUp, FiTrendingDown } from 'react-icons/fi'
+import { FiAward, FiCheckCircle } from 'react-icons/fi'
 
 const Leaderboard = ({ stats }) => {
   const sortedBuildings = [...stats]
     .sort((a, b) => (b.sustainability_score || 0) - (a.sustainability_score || 0))
-    .slice(0, 10)
-
-  const getRankColor = (rank) => {
-    switch(rank) {
-      case 1: return 'text-yellow-500'
-      case 2: return 'text-gray-400'
-      case 3: return 'text-orange-500'
-      default: return 'text-gray-500'
-    }
-  }
-
-  const getRankIcon = (rank) => {
-    switch(rank) {
-      case 1: return '🥇'
-      case 2: return '🥈'
-      case 3: return '🥉'
-      default: return '🏅'
-    }
-  }
+    .slice(0, 8)
 
   return (
-    <div className="glass-card p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold flex items-center">
-          <FiAward className="mr-2 text-yellow-500" />
-          Sustainability Leaderboard
-        </h3>
-        <span className="text-sm text-gray-400">Top 10</span>
-      </div>
+    <div className="space-y-4">
+      {/* Leaderboard Table (Approva PO/History table style) */}
+      <div className="border-[3px] border-[#121210] bg-[#FFFFFF] shadow-[4px_4px_0_#121210] overflow-hidden">
+        <div className="flex items-center justify-between p-3.5 border-b-[3px] border-[#121210] bg-[#CFE8D6]">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 border-2 border-[#121210] bg-[#E8A030] flex items-center justify-center font-bold text-xs shadow-[2px_2px_0_#121210]">
+              🏆
+            </div>
+            <h3 className="font-display font-black text-sm uppercase text-[#121210]">
+              Facility ESG Leaderboard
+            </h3>
+          </div>
+          <span className="tag bg-[#FFFFFF] text-[9px] py-0 px-1 font-mono">
+            RANKED 1-8
+          </span>
+        </div>
 
-      <div className="space-y-3">
-        {sortedBuildings.map((building, index) => (
-          <div 
-            key={building.building_id} 
-            className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-800/50 transition"
-          >
-            <div className="flex items-center flex-1">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center mr-3 ${
-                index === 0 ? 'bg-yellow-500/20' :
-                index === 1 ? 'bg-gray-500/20' :
-                index === 2 ? 'bg-orange-500/20' :
-                'bg-gray-700/20'
-              }`}>
-                <span className={`font-bold ${getRankColor(index + 1)}`}>
-                  {getRankIcon(index + 1)}
-                </span>
-              </div>
-              
-              <div className="flex-1">
-                <div className="flex justify-between">
-                  <p className="font-medium truncate max-w-[120px]">
+        <table className="w-full font-mono text-xs border-collapse">
+          <thead>
+            <tr className="border-b-2 border-[#121210] bg-[#FFFFFF] text-[10px] text-[#121210]/70 uppercase">
+              <th className="text-left p-2.5 pl-3">POS</th>
+              <th className="text-left p-2.5">FACILITY</th>
+              <th className="text-right p-2.5">SCORE</th>
+              <th className="text-right p-2.5 pr-3">STATUS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedBuildings.map((building, index) => {
+              const rank = index + 1
+              const rankColor =
+                rank === 1 ? 'bg-[#E8A030] text-[#121210]' :
+                rank === 2 ? 'bg-[#CFE8D6] text-[#121210]' :
+                rank === 3 ? 'bg-[#FFFFFF] text-[#121210]' : 'bg-[#FFFFFF] text-[#121210]/60'
+
+              return (
+                <tr
+                  key={building.building_id}
+                  className="border-b border-[#121210]/20 hover:bg-[#CFE8D6]/40 transition-colors"
+                >
+                  <td className="p-2.5 pl-3">
+                    <span className={`inline-block w-5 h-5 border border-[#121210] text-center leading-4 font-bold text-[10px] ${rankColor}`}>
+                      {rank}
+                    </span>
+                  </td>
+                  <td className="p-2.5 font-bold text-[#121210] truncate max-w-[110px]">
                     {building.name || building.building_id}
-                  </p>
-                  <span className={`text-sm px-2 py-1 rounded ${
-                    building.status === 'good' ? 'bg-green-500/20 text-green-300' :
-                    building.status === 'warning' ? 'bg-yellow-500/20 text-yellow-300' :
-                    'bg-red-500/20 text-red-300'
-                  }`}>
-                    {building.status || 'unknown'}
-                  </span>
-                </div>
-                
-                {/* Progress bar */}
-                <div className="mt-2">
-                  <div className="flex justify-between text-xs text-gray-400 mb-1">
-                    <span>Score</span>
-                    <span>{building.sustainability_score || 0}/100</span>
-                  </div>
-                  <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full ${
-                        building.status === 'good' ? 'bg-green-500' :
-                        building.status === 'warning' ? 'bg-yellow-500' :
-                        'bg-red-500'
+                  </td>
+                  <td className="p-2.5 text-right font-black text-[#121210]">
+                    {building.sustainability_score || 0}
+                    <span className="text-[9px] font-normal text-[#121210]/50">/100</span>
+                  </td>
+                  <td className="p-2.5 pr-3 text-right">
+                    <span
+                      className={`stamp text-[8.5px] py-0 px-1 ${
+                        building.status === 'good'
+                          ? 'text-[#2E8C42] border-[#2E8C42] bg-white'
+                          : building.status === 'warning'
+                          ? 'text-[#E8A030] border-[#E8A030] bg-white'
+                          : 'text-[#C03A3A] border-[#C03A3A] bg-white'
                       }`}
-                      style={{ width: `${(building.sustainability_score || 0)}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="ml-4 text-right">
-              <p className="text-lg font-bold">{building.sustainability_score || 0}</p>
-              <div className="flex items-center justify-end text-xs text-gray-400">
-                <FiTrendingUp className="mr-1 text-green-500" />
-                <span>+{Math.floor(Math.random() * 5) + 1}%</span>
-              </div>
-            </div>
-          </div>
-        ))}
+                    >
+                      {building.status === 'good' ? 'OPTIMAL' : building.status === 'warning' ? 'WARN' : 'CRIT'}
+                    </span>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
 
-      {/* Legend */}
-      <div className="mt-6 pt-4 border-t border-gray-700">
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-            <span>Excellent (80-100)</span>
+      {/* Approva-Style Policy & Audit Checks Card */}
+      <div className="border-[3px] border-[#121210] bg-[#FFFFFF] shadow-[4px_4px_0_#121210] p-4">
+        <div className="flex items-center justify-between pb-2 mb-3 border-b-2 border-[#121210]">
+          <span className="font-display font-bold text-xs uppercase tracking-wider text-[#121210]">
+            POLICY & COMPLIANCE CHECK
+          </span>
+          <span className="tag bg-[#2E8C42] text-white text-[8px] py-0 px-1">
+            4/4 OK
+          </span>
+        </div>
+
+        <div className="space-y-2 text-xs font-mono">
+          <div className="flex justify-between items-center">
+            <span className="text-[#121210]/70">ASHRAE 90.1 standard</span>
+            <span className="font-bold text-[#2E8C42] border border-[#2E8C42] px-1 bg-[#CFE8D6]/40">PASS</span>
           </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
-            <span>Good (60-79)</span>
+          <div className="flex justify-between items-center">
+            <span className="text-[#121210]/70">Campus Grid CapEx</span>
+            <span className="font-bold text-[#2E8C42] border border-[#2E8C42] px-1 bg-[#CFE8D6]/40">62% NOMINAL</span>
           </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-            <span>Needs Attention</span>
+          <div className="flex justify-between items-center">
+            <span className="text-[#121210]/70">Greywater recycling</span>
+            <span className="font-bold text-[#2E8C42] border border-[#2E8C42] px-1 bg-[#CFE8D6]/40">98% COMPLIANT</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-[#121210]/70">SLA failure risk</span>
+            <span className="font-bold text-[#2E8C42] border border-[#2E8C42] px-1 bg-[#CFE8D6]/40">LOW (0.02)</span>
           </div>
         </div>
       </div>

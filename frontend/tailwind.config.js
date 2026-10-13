@@ -6,7 +6,17 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"Hanken Grotesk"', 'sans-serif'],
+        display: ['Archivo', 'sans-serif'],
+        mono: ['"Space Mono"', 'monospace'],
+      },
       colors: {
+        mint: '#CFE8D6',
+        ink: '#121210',
+        'brut-green': '#2E8C42',
+        'brut-amber': '#E8A030',
+        'brut-red': '#C03A3A',
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',
@@ -31,6 +41,12 @@ export default {
           800: '#1e293b',
           900: '#0f172a',
         }
+      },
+      boxShadow: {
+        'brut-sm': '3px 3px 0 #121210',
+        'brut': '4px 4px 0 #121210',
+        'brut-lg': '6px 6px 0 #121210',
+        'brut-xl': '8px 8px 0 #121210',
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',

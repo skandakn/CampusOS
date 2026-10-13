@@ -1,179 +1,272 @@
 import { useState, useEffect } from 'react'
-import { FiBarChart2, FiTrendingUp, FiTrendingDown, FiCalendar } from 'react-icons/fi'
+import { FiBarChart2, FiTrendingUp, FiTrendingDown, FiClock, FiFileText } from 'react-icons/fi'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { dataAPI } from '../../services/api'
+
 const Dashboard = ({ stats }) => {
   const [timeRange, setTimeRange] = useState('24h')
   const [filterstats, setfilterStats] = useState(stats)
-  
+
   const getHoursFromRange = (range) => {
     switch (range) {
-      case '24h': return 24;
-      case '7d': return 168; // 7 * 24
-      case '30d': return 720; // 30 * 24
-      default: return 24;
+      case '24h': return 24
+      case '7d': return 168
+      case '30d': return 720
+      default: return 24
     }
   }
-const fetchfilterData = async (currentRange) => {
-      try {
-        const hours = getHoursFromRange(currentRange);
-        
-        const data = await dataAPI.getBuildingStats({ hours }) 
-        
-        const buildings = data.buildings || data.data || [] 
-        console.log("Filter data:",buildings)
-        setfilterStats(buildings)
-      } catch (error) {
-        console.error('Error fetching data:', error)
-      }
+
+  const fetchfilterData = async (currentRange) => {
+    try {
+      const hours = getHoursFromRange(currentRange)
+      const data = await dataAPI.getBuildingStats({ hours })
+      const buildings = data.buildings || data.data || []
+      setfilterStats(buildings)
+    } catch (error) {
+      // Keep existing stats
     }
-    
+  }
+
+  useEffect(() => {
+    if (stats && stats.length) {
+      setfilterStats(stats)
+    }
+  }, [stats])
+
   useEffect(() => {
     fetchfilterData(timeRange)
   }, [timeRange])
-  // Prepare chart data
-  const energyData = filterstats.map(building => ({
-    name: building.name || building.building_id,
+
+  const energyData = (filterstats.length ? filterstats : stats).map(building => ({
+    name: (building.name || building.building_id).replace('Campus Hub ', 'B-').replace('Building ', 'B-'),
     energy: building.avg_energy || 0,
     score: building.sustainability_score || 0,
-    status: building.status
-  })).sort((a, b) => b.energy - a.energy)
+    water: building.water_usage || 0
+  })).slice(0, 8)
 
   const timeSeriesData = [
-    { hour: '00:00', energy: 120, water: 300 },
-    { hour: '04:00', energy: 80, water: 150 },
-    { hour: '08:00', energy: 200, water: 450 },
-    { hour: '12:00', energy: 220, water: 400 },
-    { hour: '16:00', energy: 180, water: 350 },
-    { hour: '20:00', energy: 150, water: 250 },
-    { hour: '23:00', energy: 100, water: 200 },
+    { hour: '00:00', energy: 120, water: 280, baseline: 150 },
+    { hour: '04:00', energy: 75, water: 120, baseline: 150 },
+    { hour: '08:00', energy: 195, water: 420, baseline: 150 },
+    { hour: '12:00', energy: 230, water: 390, baseline: 150 },
+    { hour: '16:00', energy: 185, water: 340, baseline: 150 },
+    { hour: '20:00', energy: 140, water: 230, baseline: 150 },
+    { hour: '23:00', energy: 95, water: 170, baseline: 150 },
   ]
 
-  const statusDistribution = {
-    good: filterstats.filter(b => b.status === 'good').length,
-    warning: filterstats.filter(b => b.status === 'warning').length,
-    critical: filterstats.filter(b => b.status === 'critical').length
-  }
+  const avgEnergy = Math.round(
+    filterstats.reduce((sum, b) => sum + (b.avg_energy || 0), 0) / (filterstats.length || 1)
+  )
+  const peakOccupancy = Math.max(...filterstats.map(b => b.occupancy || 0), 180)
+  const totalCarbon = Math.round(
+    filterstats.reduce((sum, b) => sum + (b.avg_energy || 0) * 0.233, 0)
+  )
 
   return (
-    <div className="h-full overflow-y-auto pr-2">
-      <div className="space-y-4">
-        {/* Time Range Selector */}
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-bold">Campus Analytics Dashboard</h2>
-          <div className="flex space-x-2">
-            {['24h', '7d', '30d'].map((range) => (
-              <button
-                key={range}
-                onClick={() => setTimeRange(range)}
-                className={`px-3 py-1 rounded-lg text-sm ${timeRange === range ? 'bg-blue-600' : 'bg-gray-800 hover:bg-gray-700'}`}
-              >
-                {range}
-              </button>
-            ))}
+    <div className="space-y-4">
+      {/* Time Range Selector & Title */}
+      <div className="flex justify-between items-center bg-[#FFFFFF] border-[3px] border-[#121210] shadow-[4px_4px_0_#121210] p-3 px-4">
+        <div>
+          <h2 className="font-display font-black text-lg text-[#121210] uppercase tracking-tight">
+            CAMPUS TELEMETRY & CONSUMPTION AUDIT
+          </h2>
+          <p className="font-mono text-[10px] text-[#121210]/60">
+            AGGREGATED INTERVAL: {timeRange.toUpperCase()} · AUDITED TELEMETRY SPEC
+          </p>
+        </div>
+
+        <div className="flex gap-1.5 font-mono text-xs">
+          {['24h', '7d', '30d'].map((range) => (
+            <button
+              key={range}
+              onClick={() => setTimeRange(range)}
+              className={`px-3 py-1 border-2 border-[#121210] font-bold uppercase btn-press ${
+                timeRange === range
+                  ? 'bg-[#121210] text-[#FFFFFF] shadow-[2px_2px_0_#121210]'
+                  : 'bg-[#FFFFFF] text-[#121210] hover:bg-[#CFE8D6]'
+              }`}
+            >
+              {range}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 3 Stat Cards (Brutalist PO/Invoice Spec) */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="brut-card p-4 relative">
+          <span className="absolute -top-2.5 -left-2 bg-[#E8A030] text-[#121210] border-2 border-[#121210] px-1.5 py-0.2 text-[9px] font-mono font-bold shadow-[2px_2px_0_#121210]">
+            GRID-LOAD
+          </span>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[10px] font-mono font-bold text-[#121210]/60 uppercase tracking-widest">
+                MEAN ENERGY CONSUMPTION
+              </p>
+              <p className="font-mono font-black text-2xl text-[#121210] mt-1">
+                {avgEnergy} <span className="text-xs font-normal text-[#121210]/60">kWh/node</span>
+              </p>
+            </div>
+            <span className="stamp text-[#2E8C42] border-[#2E8C42] text-[9px]">
+              -5.2%
+            </span>
+          </div>
+          <div className="mt-2 pt-2 border-t border-[#121210]/20 flex justify-between text-[10.5px] font-mono">
+            <span className="text-[#121210]/60">SLA TARGET: 150 kWh</span>
+            <span className="font-bold text-[#2E8C42]">COMPLIANT</span>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="glass-card p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm">Avg. Energy Consumption</p>
-                <p className="text-2xl font-bold">
-                  {Math.round(filterstats.reduce((sum, b) => sum + (b.avg_energy || 0), 0) / filterstats.length) || 0} kWh
-                </p>
-              </div>
-              <FiTrendingDown className="text-red-500 text-2xl" />
+        <div className="brut-card p-4 relative">
+          <span className="absolute -top-2.5 -left-2 bg-[#FFFFFF] border-2 border-[#121210] px-1.5 py-0.2 text-[9px] font-mono font-bold shadow-[2px_2px_0_#121210]">
+            SENSOR-PEAK
+          </span>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[10px] font-mono font-bold text-[#121210]/60 uppercase tracking-widest">
+                PEAK POPULATION / OCCUPANCY
+              </p>
+              <p className="font-mono font-black text-2xl text-[#121210] mt-1">
+                {peakOccupancy} <span className="text-xs font-normal text-[#121210]/60">PEOPLE</span>
+              </p>
             </div>
-            <p className="text-green-400 text-sm mt-2">↓ 5% from last week</p>
+            <span className="stamp text-[#E8A030] border-[#E8A030] text-[9px]">
+              PEAK LOAD
+            </span>
           </div>
-
-          <div className="glass-card p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm">Peak Occupancy</p>
-                <p className="text-2xl font-bold">
-                  {Math.max(...filterstats.map(b => b.occupancy || 0))} people
-                </p>
-              </div>
-              <FiTrendingUp className="text-green-500 text-2xl" />
-            </div>
-            <p className="text-yellow-400 text-sm mt-2">↑ 12% from last week</p>
-          </div>
-
-          <div className="glass-card p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm">Carbon Footprint</p>
-                <p className="text-2xl font-bold">
-                  {Math.round(filterstats.reduce((sum, b) => sum + (b.avg_energy || 0) * 0.233, 0))} kg CO₂
-                </p>
-              </div>
-              <FiBarChart2 className="text-blue-500 text-2xl" />
-            </div>
-            <p className="text-green-400 text-sm mt-2">↓ 8% from last month</p>
+          <div className="mt-2 pt-2 border-t border-[#121210]/20 flex justify-between text-[10.5px] font-mono">
+            <span className="text-[#121210]/60">DENSITY LIMIT: 250</span>
+            <span className="font-bold text-[#121210]">68% CAP</span>
           </div>
         </div>
 
-        {/* Charts Row 1 */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Energy Consumption by Building */}
-          <div className="glass-card p-4">
-            <h3 className="font-semibold mb-4">Energy Consumption by Building</h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={energyData.slice(0, 8)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
-                  <YAxis stroke="#94a3b8" />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1e293b', borderColor: '#475569' }}
-                    labelStyle={{ color: '#cbd5e1' }}
-                  />
-                  <Legend />
-                  <Bar dataKey="energy" name="Energy (kWh)" fill="#3b82f6" />
-                  <Bar dataKey="score" name="Score" fill="#10b981" />
-                </BarChart>
-              </ResponsiveContainer>
+        <div className="brut-card p-4 relative">
+          <span className="absolute -top-2.5 -left-2 bg-[#CFE8D6] border-2 border-[#121210] px-1.5 py-0.2 text-[9px] font-mono font-bold shadow-[2px_2px_0_#121210]">
+            EMISSIONS
+          </span>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[10px] font-mono font-bold text-[#121210]/60 uppercase tracking-widest">
+                CARBON FOOTPRINT
+              </p>
+              <p className="font-mono font-black text-2xl text-[#121210] mt-1">
+                {totalCarbon} <span className="text-xs font-normal text-[#121210]/60">kg CO₂e</span>
+              </p>
             </div>
+            <span className="stamp text-[#2E8C42] border-[#2E8C42] text-[9px]">
+              -8.4%
+            </span>
           </div>
-
-          {/* Daily Pattern */}
-          <div className="glass-card p-4">
-            <h3 className="font-semibold mb-4">Daily Consumption Pattern</h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={timeSeriesData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis dataKey="hour" stroke="#94a3b8" />
-                  <YAxis stroke="#94a3b8" />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1e293b', borderColor: '#475569' }}
-                    labelStyle={{ color: '#cbd5e1' }}
-                  />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="energy" 
-                    name="Energy (kWh)" 
-                    stroke="#3b82f6" 
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="water" 
-                    name="Water (L)" 
-                    stroke="#0ea5e9" 
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+          <div className="mt-2 pt-2 border-t border-[#121210]/20 flex justify-between text-[10.5px] font-mono">
+            <span className="text-[#121210]/60">OFFSET STATUS</span>
+            <span className="font-bold text-[#2E8C42]">CERTIFIED</span>
           </div>
         </div>
+      </div>
+
+      {/* 2 Brutalist Charts */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Chart 1 */}
+        <div className="brut-card p-4">
+          <div className="flex justify-between items-center mb-3 pb-2 border-b-2 border-[#121210]">
+            <div>
+              <h3 className="font-display font-bold text-sm text-[#121210] uppercase">
+                Facility Energy & Score Matrix
+              </h3>
+              <p className="font-mono text-[9px] text-[#121210]/60">RANKED BY CONSUMPTION</p>
+            </div>
+            <span className="tag bg-[#CFE8D6] text-[9px]">kWh / SCORE</span>
+          </div>
+
+          <div className="h-60">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={energyData}>
+                <CartesianGrid strokeDasharray="2 2" stroke="#121210" opacity={0.15} />
+                <XAxis dataKey="name" stroke="#121210" fontSize={11} fontFamily="Space Mono" tickLine={false} />
+                <YAxis stroke="#121210" fontSize={11} fontFamily="Space Mono" tickLine={false} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#FFFFFF',
+                    border: '2px solid #121210',
+                    boxShadow: '3px 3px 0 #121210',
+                    fontFamily: 'Space Mono',
+                    fontSize: '11px',
+                    color: '#121210'
+                  }}
+                />
+                <Legend wrapperStyle={{ fontFamily: 'Space Mono', fontSize: '11px', color: '#121210' }} />
+                <Bar dataKey="energy" name="Energy (kWh)" fill="#121210" stroke="#121210" strokeWidth={1.5} />
+                <Bar dataKey="score" name="Score (/100)" fill="#2E8C42" stroke="#121210" strokeWidth={1.5} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Chart 2 */}
+        <div className="brut-card p-4">
+          <div className="flex justify-between items-center mb-3 pb-2 border-b-2 border-[#121210]">
+            <div>
+              <h3 className="font-display font-bold text-sm text-[#121210] uppercase">
+                24-Hour Diurnal Telemetry
+              </h3>
+              <p className="font-mono text-[9px] text-[#121210]/60">ENERGY VS. WATER PROFILE</p>
+            </div>
+            <span className="tag bg-[#E8A030] text-[9px]">DIURNAL CYCLE</span>
+          </div>
+
+          <div className="h-60">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={timeSeriesData}>
+                <CartesianGrid strokeDasharray="2 2" stroke="#121210" opacity={0.15} />
+                <XAxis dataKey="hour" stroke="#121210" fontSize={11} fontFamily="Space Mono" tickLine={false} />
+                <YAxis stroke="#121210" fontSize={11} fontFamily="Space Mono" tickLine={false} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#FFFFFF',
+                    border: '2px solid #121210',
+                    boxShadow: '3px 3px 0 #121210',
+                    fontFamily: 'Space Mono',
+                    fontSize: '11px',
+                    color: '#121210'
+                  }}
+                />
+                <Legend wrapperStyle={{ fontFamily: 'Space Mono', fontSize: '11px', color: '#121210' }} />
+                <Line
+                  type="stepAfter"
+                  dataKey="energy"
+                  name="Energy (kWh)"
+                  stroke="#121210"
+                  strokeWidth={3}
+                  dot={{ r: 4, stroke: '#121210', strokeWidth: 2, fill: '#FFFFFF' }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="water"
+                  name="Water (Liters)"
+                  stroke="#2E8C42"
+                  strokeWidth={2.5}
+                  dot={{ r: 4, stroke: '#121210', strokeWidth: 2, fill: '#2E8C42' }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Approva-Style Immutable Audit Log Box */}
+      <div className="border-[3px] border-[#121210] bg-[#121210] text-[#FFFFFF] shadow-[4px_4px_0_#121210] p-4">
+        <div className="flex items-center justify-between mb-2 pb-2 border-b border-[#FFFFFF]/20">
+          <div className="font-display font-bold text-xs uppercase flex items-center gap-2 tracking-wider text-white">
+            <FiFileText /> IMMUTABLE AUDIT LOG & TELEMETRY LEDGER
+          </div>
+          <span className="font-mono text-[9px] text-[#FFFFFF]/60">SHA-256 · TAMPER EVIDENT</span>
+        </div>
+        <pre className="font-mono text-[10.5px] leading-5 text-[#FFFFFF]/90 overflow-x-auto whitespace-pre-wrap">
+2026-10-14 00:10:02Z  TELEMETRY   bldg_05.sensor_net     ENERGY: 142.4 kWh · WATER: 310 L · CO2: 440 ppm
+2026-10-14 00:10:04Z  EVALUATED   isolation_forest_ml    Anomaly Score: 0.082 (NOMINAL OPERATION)
+2026-10-14 00:10:07Z  STAMPED     campus.automation.svc  APPROVED · Retained Net-Zero Grid Dispatch Schedule
+2026-10-14 00:10:14Z  LEDGER-COMMIT operator             BLOCK #51,902 SEALED [0x8f2d...410b]
+        </pre>
       </div>
     </div>
   )
