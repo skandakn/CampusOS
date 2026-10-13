@@ -1,6 +1,5 @@
 import { FiMenu, FiGrid, FiMap, FiSettings, FiBell } from 'react-icons/fi'
 import { TbBuildingEstate } from 'react-icons/tb'
-import MLStatusBadge from './MLStatusBadge'
 import SimulationControl from './SimulationControl'
 
 const Header = ({ connected, onSimulate, activeView, onViewChange }) => {
@@ -16,13 +15,6 @@ const Header = ({ connected, onSimulate, activeView, onViewChange }) => {
               <p className="text-sm text-gray-400">Real-time Sustainability Monitoring</p>
             </div>
           </div>
-          
-          {/* Connection Status Badge */}
-          <div className={`px-2 py-1 rounded-full text-sm flex items-center ${connected ? 'bg-green-500/20 text-green-300' : 'bg-yellow-500/20 text-yellow-300'}`}>
-            <div className={`w-2 h-2 rounded-full mr-2 ${connected ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`}></div>
-            {connected ? 'Live' : 'Offline'}
-          </div>
-          <MLStatusBadge />
         </div>
         
         {/* Center: View Toggle */}
