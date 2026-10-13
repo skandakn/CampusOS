@@ -12,19 +12,21 @@ from app.simulation.data_generator import data_generator
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("🚀 Starting application...")
-    
-    init_influxdb() 
-    seed_task = asyncio.create_task(run_seeding_in_background())
-    sim_task = asyncio.create_task(data_generator.start_continuous_simulation(interval_seconds=300))
-    
-    print("✅ Port binding in progress, seeding will continue in background.")
-    yield
-    data_generator.stop_simulation()
-    sim_task.cancel()
     try:
-        await sim_task
-    except asyncio.CancelledError:
-        print("✅ Continuous simulation stopped gracefully.")
+        init_influxdb() 
+        seed_task = asyncio.create_task(run_seeding_in_background())
+        sim_task = asyncio.create_task(data_generator.start_continuous_simulation(interval_seconds=300))
+        print("✅ Background tasks initialized.")
+        yield
+        data_generator.stop_simulation()
+        sim_task.cancel()
+        try:
+            await sim_task
+        except asyncio.CancelledError:
+            print("✅ Continuous simulation stopped gracefully.")
+    except Exception as e:
+        print(f"⚠️ Startup background tasks warning: {e}")
+        yield
     print("🛑 Application shutdown...")
 
 async def run_seeding_in_background():
@@ -40,12 +42,15 @@ app = FastAPI(
     version="1.0.0",
     description="Digital Twin API for Sustainable Smart Campuses",
     lifespan=lifespan,
+    docs_url="/api/docs",
+    openapi_url="/api/openapi.json"
 )
 
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_origin_regex=r"^https://.*\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -56,14 +61,16 @@ app.include_router(data.router, prefix=f"{settings.API_V1_STR}/data", tags=["dat
 app.include_router(predictions.router, prefix=f"{settings.API_V1_STR}/ml", tags=["predictions"])
 app.include_router(websocket.router, prefix=f"{settings.API_V1_STR}/ws", tags=["websocket"])
 
+@app.get("/api")
 @app.get("/")
 async def root():
     return {
         "message": "Welcome to Smart Campus Digital Twin API",
-        "docs": "/docs",
+        "docs": "/api/docs",
         "version": "1.0.0"
     }
 
+@app.get("/api/health")
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "smart-campus-api"}

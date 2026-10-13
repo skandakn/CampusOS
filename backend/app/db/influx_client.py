@@ -34,8 +34,8 @@ def init_influxdb():
         
     except Exception as e:
         logger.error(f"❌ Failed to connect to InfluxDB: {e}")
-        # In a script, you might want to exit. In a web server, you might just log it.
-        raise 
+        # In a web server, log it and allow app to serve mock/cached responses
+        client, write_api, query_api = None, None, None
 
 def write_sensor_data(building_id: str, data_type: str, value: float, timestamp=None):
     # CRITICAL: Check if API exists before using it

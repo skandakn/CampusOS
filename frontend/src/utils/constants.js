@@ -65,8 +65,27 @@ export const DATA_TYPES = {
 };
 
 // API endpoints
+const getBaseApiUrl = () => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  // In Vercel multi-service deployment, the backend is routed under /api
+  return '/api/v1';
+};
+
+const getWebSocketUrl = () => {
+  if (import.meta.env.VITE_WS_URL) {
+    return import.meta.env.VITE_WS_URL;
+  }
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}/api/v1/ws/real-time`;
+  }
+  return 'ws://localhost:8000/api/v1/ws/real-time';
+};
+
 export const API_ENDPOINTS = {
-  BASE: `${import.meta.env.VITE_API_BASE_URL}`,
+  BASE: getBaseApiUrl(),
   DATA: {
     SENSOR: '/data/sensor',
     STATS: '/data/stats',
@@ -74,7 +93,7 @@ export const API_ENDPOINTS = {
     SIMULATION_STATUS: '/data/simulation/status',
     TOGGLE_SIMULATION:  '/data/simulation/toggle'
   },
-  WS: `${import.meta.env.VITE_WS_URL}`
+  WS: getWebSocketUrl()
 };
 
 // Campus layout coordinates (for 3D visualization)
