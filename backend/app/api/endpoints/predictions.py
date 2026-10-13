@@ -11,8 +11,18 @@ from app.api.models import PredictionRequest, PredictionResponse
 from app.ml.models import model_manager
 from app.ml.data_processor import DataProcessor
 from fastapi import HTTPException
-from apscheduler.schedulers.background import BackgroundScheduler
-from scripts.train_ml import run_training_pipeline
+try:
+    from apscheduler.schedulers.background import BackgroundScheduler
+except Exception:
+    BackgroundScheduler = None
+
+try:
+    from scripts.train_ml import run_training_pipeline
+except Exception:
+    try:
+        from backend.scripts.train_ml import run_training_pipeline
+    except Exception:
+        run_training_pipeline = None
 
 router = APIRouter()
 
@@ -36,8 +46,8 @@ def load_all_models():
 
         maintenance_model = joblib.load("models/maintenance_classifier_model.pkl")
         print("All ML Models successfully loaded and ready for inference.")
-    except FileNotFoundError as e:
-        print(f"WARNING: Models not found. {e}")
+    except Exception as e:
+        print(f"Note: ML model files not loaded ({e}). API will use fallback heuristics.")
 
 # Initial load on startup
 load_all_models()
@@ -45,19 +55,24 @@ load_all_models()
 # --- AUTOMATED SCHEDULER SETUP ---
 def scheduled_retrain_job():
     """The function executed by the cron scheduler."""
+    if not run_training_pipeline:
+        return
     try:
         success = run_training_pipeline()
         if success:
-            load_all_models() # Immediately apply new models to live traffic
+            load_all_models()
     except Exception as e:
         print(f"CRITICAL: Scheduled retraining failed: {e}")
 
-# Start the background scheduler
-scheduler = BackgroundScheduler()
-# Example 1: Run every Sunday at 2:00 AM
-scheduler.add_job(scheduled_retrain_job, 'cron', day_of_week='sun', hour=2, minute=0)
-
-scheduler.start()
+# Start the background scheduler safely
+scheduler = None
+if BackgroundScheduler:
+    try:
+        scheduler = BackgroundScheduler()
+        scheduler.add_job(scheduled_retrain_job, 'cron', day_of_week='sun', hour=2, minute=0)
+        scheduler.start()
+    except Exception as e:
+        print(f"Background scheduler skipped in serverless environment: {e}")
 
 
 @router.get("/model-status")

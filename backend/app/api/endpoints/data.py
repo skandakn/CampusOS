@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Query, BackgroundTasks
 from datetime import datetime, timedelta
 from typing import List, Optional
 import asyncio
+import random
 
 from app.db.influx_client import query_sensor_data, get_building_stats, write_sensor_data
 from app.api.models import SensorDataResponse, BuildingStatsResponse
@@ -115,5 +116,3 @@ async def add_manual_data(
             raise HTTPException(status_code=500, detail="Failed to write data")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error adding data: {str(e)}")
-
-import random

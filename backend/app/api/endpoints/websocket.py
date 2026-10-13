@@ -126,6 +126,10 @@ async def broadcast_updates():
         # Wait 10 seconds before next update
         await asyncio.sleep(10)
 
-# Start broadcast task when module loads
-import asyncio
-asyncio.create_task(broadcast_updates())
+def start_broadcast_loop():
+    """Safely start broadcast background task if event loop is running"""
+    try:
+        loop = asyncio.get_running_loop()
+        return loop.create_task(broadcast_updates())
+    except RuntimeError:
+        return None

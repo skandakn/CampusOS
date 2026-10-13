@@ -13,20 +13,13 @@ from app.simulation.data_generator import data_generator
 async def lifespan(app: FastAPI):
     print("🚀 Starting application...")
     try:
-        init_influxdb() 
-        seed_task = asyncio.create_task(run_seeding_in_background())
-        sim_task = asyncio.create_task(data_generator.start_continuous_simulation(interval_seconds=300))
-        print("✅ Background tasks initialized.")
-        yield
-        data_generator.stop_simulation()
-        sim_task.cancel()
-        try:
-            await sim_task
-        except asyncio.CancelledError:
-            print("✅ Continuous simulation stopped gracefully.")
+        init_influxdb()
+        from app.api.endpoints.websocket import start_broadcast_loop
+        start_broadcast_loop()
+        print("✅ Startup initialized.")
     except Exception as e:
         print(f"⚠️ Startup background tasks warning: {e}")
-        yield
+    yield
     print("🛑 Application shutdown...")
 
 async def run_seeding_in_background():
