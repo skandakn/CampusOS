@@ -131,8 +131,15 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#CFE8D6] flex items-center justify-center p-6">
-        <div className="border-[3px] border-[#121210] bg-[#FFFFFF] shadow-[6px_6px_0_#121210] p-8 max-w-md w-full text-center">
+      <div className="startup-screen min-h-screen bg-[#CFE8D6] flex items-center justify-center p-6">
+        <iframe
+          className="startup-scene"
+          src="https://my.spline.design/draganddropbookpencilschoolcopy-hV6ow9scr1ZPOzT3pkosM1Of/"
+          title="Interactive 3D CampusOS school scene"
+          allow="autoplay; fullscreen"
+          loading="eager"
+        />
+        <div className="startup-card border-[3px] border-[#121210] bg-[#FFFFFF] shadow-[6px_6px_0_#121210] p-8 max-w-md w-full text-center">
           <div className="w-12 h-12 bg-[#2E8C42] border-2 border-[#121210] mx-auto mb-4 flex items-center justify-center text-white font-mono text-xl font-bold animate-pulse">
             ⚡
           </div>
