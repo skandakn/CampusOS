@@ -117,21 +117,6 @@ CampusOS/
 └── docker-compose.yml
 ```
 
-## 🔧 Configuration
-
-### Environment Variables
-```env
-# Backend (.env)
-INFLUXDB_URL=http://localhost:8086
-INFLUXDB_TOKEN=my-super-secret-auth-token
-INFLUXDB_ORG=campus_org
-INFLUXDB_BUCKET=campus_data
-
-# Frontend (.env)
-VITE_API_BASE_URL=http://localhost:8000/api/v1
-VITE_WS_URL=ws://localhost:8000/api/v1/ws/real-time
-```
-
 ## 🧪 Testing & Demo
 
 ### Demo Features Ready
