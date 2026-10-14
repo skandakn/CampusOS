@@ -12,7 +12,6 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://localhost",
         "http://localhost:80",
-        "https://campus-twin.vercel.app",
         "https://campusos-roan.vercel.app",
         "*"
     ]

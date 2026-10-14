@@ -260,9 +260,8 @@ docker-compose logs -f frontend
 - **API Gateway**: Advanced routing and rate limiting
 
 
-## 👥 Contributors & Authors
-- **skandakn** ([@skandakn](https://github.com/skandakn)) - Repository Maintainer & Contributor
-- Base upstream project: [campus-twin](https://github.com/aakifsaf/campus-twin) by [aakifsaf](https://github.com/aakifsaf)
+## 👤 Author
+- **skandakn** ([@skandakn](https://github.com/skandakn)) - Creator & Lead Developer
 
 ## 🤝 Contributing
 1. Fork the repository
