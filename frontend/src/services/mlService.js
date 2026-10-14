@@ -38,7 +38,7 @@ class MLService {
   async getAnomalies(buildingId, dataType = 'energy', currentUsage = null) {
     try {
       // Build params object, only adding currentUsage if it's provided
-      const params = { 
+      const params = {
         building_id: buildingId,
         data_type: dataType
       };
@@ -79,13 +79,13 @@ class MLService {
   generateMockMaintenance(buildingId) {
     return {
       alerts: [
-        { 
-          id: 1, 
-          equipment: `HVAC Unit A (Roof) - ${buildingId.split('_').pop()}`, 
-          health: 24, 
-          eta: '14 Days', 
-          issue: 'API Offline: Simulated High Vibration', 
-          status: 'critical' 
+        {
+          id: 1,
+          equipment: `HVAC Unit A (Roof) - ${buildingId.split('_').pop()}`,
+          health: 24,
+          eta: '14 Days',
+          issue: 'API Offline: Simulated High Vibration',
+          status: 'critical'
         }
       ]
     };
@@ -94,12 +94,12 @@ class MLService {
   generateMockAnomalies(buildingId, dataType) {
     return {
       anomalies: [
-        { 
-          id: 1, 
-          time: '03:00 AM', 
-          event: `API Offline - Mock ${dataType} Anomaly`, 
-          insight: `Showing mock anomaly data for ${dataType}. Start Python server for real Isolation Forest ML.`, 
-          action: 'Start Backend Server' 
+        {
+          id: 1,
+          time: '03:00 AM',
+          event: `API Offline - Mock ${dataType} Anomaly`,
+          insight: `Showing mock anomaly data for ${dataType}. Start Python server for real Isolation Forest ML.`,
+          action: 'Start Backend Server'
         }
       ]
     };
@@ -113,7 +113,7 @@ class MLService {
   //       hours_ahead: hoursAhead,
   //       include_anomaly: includeAnomaly
   //     })
-      
+
   //     return response
   //   } catch (error) {
   //     console.error('Prediction error:', error)
@@ -125,12 +125,12 @@ class MLService {
   // What-if analysis
   async whatIfAnalysis(buildingId, scenario, parameters) {
     try {
-      const response = await api.post(`${this.baseURL}/what-if`, 
+      const response = await api.post(`${this.baseURL}/what-if`,
         parameters,
       {
-        params:{ building_id: buildingId, scenario: scenario} 
+        params:{ building_id: buildingId, scenario: scenario}
       })
-      
+
       return response
     } catch (error) {
       console.error('What-if analysis error:', error)
@@ -144,7 +144,7 @@ class MLService {
       const response = await api.get(`${this.baseURL}/predict-trend`, {
         params: { building_id: buildingId, data_type: dataType, days }
       })
-      
+
       return response
     } catch (error) {
       console.error('Trend prediction error:', error)
@@ -160,7 +160,7 @@ class MLService {
         building_ids: buildingIds,
         hours: hours
       })
-      
+
       return response
     } catch (error) {
       console.error('Training error:', error)
@@ -179,24 +179,24 @@ class MLService {
     }
   }
 
-  // Mock data generators for development
-  generateMockPrediction(buildingId, dataType, hoursAhead) {
+  // Legacy mock data generator
+  generateLegacyMockPrediction(buildingId, dataType, hoursAhead) {
     const predictions = []
     const baseValue = dataType === 'energy' ? 150 : dataType === 'water' ? 300 : 100
-    
+
     for (let i = 1; i <= hoursAhead; i++) {
       const hourOfDay = (new Date().getHours() + i) % 24
       let multiplier = 1.0
-      
+
       if (hourOfDay >= 8 && hourOfDay <= 18) {
         multiplier = 1.5 + Math.sin((hourOfDay - 8) * Math.PI / 10) * 0.3
       } else {
         multiplier = 0.5 + Math.sin(hourOfDay * Math.PI / 12) * 0.2
       }
-      
+
       const value = baseValue * multiplier * (0.95 + Math.random() * 0.1)
       const confidence = 0.9 - (i * 0.01)
-      
+
       predictions.push({
         hour: i,
         timestamp: new Date(Date.now() + i * 3600000).toISOString(),
@@ -269,7 +269,7 @@ class MLService {
   generateMockTrend(buildingId, dataType, days) {
     const trend = Math.random() > 0.5 ? 'increasing' : 'decreasing'
     const severity = Math.random() > 0.7 ? 'high' : 'moderate'
-    
+
     const predictions = []
     for (let i = 1; i <= 7; i++) {
       predictions.push({
@@ -311,8 +311,8 @@ class MLService {
       }
     }
 
-    return recommendations[dataType]?.[trend]?.[severity] || 
-           recommendations[dataType]?.[trend] || 
+    return recommendations[dataType]?.[trend]?.[severity] ||
+           recommendations[dataType]?.[trend] ||
            'Continue monitoring and analysis'
   }
 
@@ -356,7 +356,7 @@ class MLService {
   // Batch predictions for multiple buildings
   async batchPredict(buildingIds, dataType = 'energy', hoursAhead = 24) {
     const predictions = []
-    
+
     for (const buildingId of buildingIds) {
       try {
         const prediction = await this.makePrediction(buildingId, dataType, hoursAhead)
@@ -368,25 +368,25 @@ class MLService {
         console.error(`Batch prediction failed for ${buildingId}:`, error)
       }
     }
-    
+
     return predictions
   }
 
   // Calculate sustainability score based on predictions
   calculateSustainabilityScore(predictions, historicalData) {
     if (!predictions || predictions.length === 0) return 0
-    
+
     const avgPrediction = predictions.reduce((sum, p) => sum + p.value, 0) / predictions.length
     const avgHistorical = historicalData.reduce((sum, h) => sum + h.value, 0) / historicalData.length
-    
+
     // Lower predicted consumption = higher score
     const consumptionRatio = avgPrediction / Math.max(avgHistorical, 1)
     const baseScore = 100 * Math.max(0, 1 - consumptionRatio)
-    
+
     // Adjust for prediction confidence
     const avgConfidence = predictions.reduce((sum, p) => sum + (p.confidence || 0.5), 0) / predictions.length
     const finalScore = baseScore * avgConfidence
-    
+
     return Math.min(100, Math.max(0, finalScore))
   }
 }

@@ -1,8 +1,17 @@
-import React, { useState, useMemo } from 'react'
-import { FiSearch, FiFilter, FiX, FiCheck } from 'react-icons/fi'
+import { useState, useMemo } from 'react'
+import { FiSearch, FiFilter, FiX, FiCheck, FiExternalLink, FiAlertTriangle, FiGrid, FiMap, FiSettings, FiEye } from 'react-icons/fi'
 import { TbBuildingCommunity } from 'react-icons/tb'
 
-const Sidebar = ({ stats, selectedBuilding, onBuildingSelect }) => {
+const Sidebar = ({
+  stats = [],
+  selectedBuilding,
+  onBuildingSelect,
+  onNavigateTo3D,
+  activeView = 'dashboard',
+  onViewChange,
+  activeTab = 'overview',
+  onTabChange
+}) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
 
@@ -34,6 +43,82 @@ const Sidebar = ({ stats, selectedBuilding, onBuildingSelect }) => {
 
   return (
     <aside className="w-[300px] shrink-0 bg-[#CFE8D6] border-r-[3px] border-[#121210] flex flex-col h-full z-20">
+      {/* Primary Sidebar Navigation */}
+      <div className="p-3.5 border-b-[3px] border-[#121210] bg-[#CFE8D6] shrink-0 space-y-2">
+        <div className="flex items-center justify-between px-0.5">
+          <div className="text-[10px] font-mono tracking-widest text-[#121210]/70 uppercase font-bold">
+            CAMPUS NAVIGATION
+          </div>
+          <span className="tag bg-[#2E8C42] text-white text-[8px] py-0 px-1 font-mono">
+            SYS ONLINE
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-1.5 font-sans">
+          <button
+            onClick={() => {
+              if (onViewChange) onViewChange('dashboard')
+              if (onTabChange) onTabChange('overview')
+            }}
+            className={`px-2.5 py-2 border-2 border-[#121210] font-display font-bold text-xs uppercase flex items-center justify-center gap-1.5 btn-press ${
+              activeView === 'dashboard' && activeTab === 'overview'
+                ? 'bg-[#121210] text-white shadow-[2px_2px_0_#121210]'
+                : 'bg-white text-[#121210] shadow-[2px_2px_0_#121210] hover:bg-[#CFE8D6]'
+            }`}
+            title="Open Campus Analytics & Telemetry Dashboard"
+          >
+            <FiGrid className="text-xs shrink-0" />
+            <span className="truncate">Dashboard</span>
+          </button>
+
+          <button
+            onClick={() => {
+              if (onViewChange) onViewChange('dashboard')
+              if (onTabChange) onTabChange('intelligence')
+            }}
+            className={`px-2.5 py-2 border-2 border-[#121210] font-display font-bold text-xs uppercase flex items-center justify-center gap-1.5 btn-press ${
+              activeView === 'dashboard' && activeTab === 'intelligence'
+                ? 'bg-[#121210] text-white shadow-[2px_2px_0_#121210]'
+                : 'bg-white text-[#121210] shadow-[2px_2px_0_#121210] hover:bg-[#CFE8D6]'
+            }`}
+            title="Open Campus Intelligence Center"
+          >
+            <FiEye className="text-xs shrink-0" />
+            <span className="truncate">Intelligence</span>
+          </button>
+
+          <button
+            onClick={() => {
+              if (onViewChange) onViewChange('3d')
+            }}
+            className={`px-2.5 py-2 border-2 border-[#121210] font-display font-bold text-xs uppercase flex items-center justify-center gap-1.5 btn-press ${
+              activeView === '3d'
+                ? 'bg-[#121210] text-white shadow-[2px_2px_0_#121210]'
+                : 'bg-white text-[#121210] shadow-[2px_2px_0_#121210] hover:bg-[#CFE8D6]'
+            }`}
+            title="Open 3D Campus Digital Twin"
+          >
+            <FiMap className="text-xs shrink-0" />
+            <span className="truncate">3D Campus</span>
+          </button>
+
+          <button
+            onClick={() => {
+              if (onViewChange) onViewChange('operations')
+            }}
+            className={`px-2.5 py-2 border-2 border-[#121210] font-display font-bold text-xs uppercase flex items-center justify-center gap-1.5 btn-press ${
+              activeView === 'operations'
+                ? 'bg-[#121210] text-white shadow-[2px_2px_0_#121210]'
+                : 'bg-white text-[#121210] shadow-[2px_2px_0_#121210] hover:bg-[#CFE8D6]'
+            }`}
+            title="Open Operations Command Center"
+          >
+            <FiSettings className="text-xs shrink-0" />
+            <span className="truncate">Operations</span>
+          </button>
+        </div>
+      </div>
+
       {/* Header section & Search */}
       <div className="p-4 border-b-[3px] border-[#121210] bg-[#CFE8D6] space-y-3">
         <div className="flex items-center justify-between">
@@ -162,6 +247,34 @@ const Sidebar = ({ stats, selectedBuilding, onBuildingSelect }) => {
                   💧 {Math.round(building.water_usage || 0)} L
                 </span>
               </div>
+
+              {/* Warning Reason Alert if in warning or critical */}
+              {building.status !== 'good' && (
+                <div className={`mt-2 p-1.5 border text-[9px] font-mono flex items-center justify-between ${
+                  building.status === 'critical'
+                    ? 'border-[#C03A3A] bg-[#C03A3A]/10 text-[#C03A3A]'
+                    : 'border-[#E8A030] bg-[#E8A030]/10 text-[#121210]'
+                }`}>
+                  <span className="font-bold flex items-center gap-1">
+                    <FiAlertTriangle className="text-xs" />
+                    {building.avg_energy > 120 ? 'Energy draw > 120 kWh' :
+                     building.water_usage > 280 ? 'Water draft > 280 L' :
+                     'CO₂ air threshold alert'}
+                  </span>
+                  {onNavigateTo3D && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onBuildingSelect(building)
+                        onNavigateTo3D(building.building_id)
+                      }}
+                      className="underline font-bold text-[8.5px] hover:text-[#2E8C42]"
+                    >
+                      3D TWIN ↗
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Status Stepper / Indicators (Approva Chain Node style) */}
               <div className="flex items-center justify-between mt-3 pt-2 border-t border-[#121210]/20">
